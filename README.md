@@ -1,5 +1,3 @@
-readme
-
 # Seam Mobile Components (iOS)
 
 Pre-built SwiftUI views for unlocking, credential handling, error states, and feedback — ready to drop into your iOS app and fully customizable to match your brand.
