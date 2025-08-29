@@ -19,7 +19,6 @@ Pre-built SwiftUI views for unlocking, credential handling, error states, and fe
 - Xcode 15+
 - iOS 16+
 - Swift Package Manager
-- A [Seam workspace](https://docs.seam.co) and API key
 
 ---
 
@@ -29,7 +28,7 @@ Add **Seam Mobile Components** to your project using **Swift Package Manager**:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/seamapi/SeamComponents", from: "1.0.0")
+    .package(url: "https://github.com/seamapi/iOS", from: "1.0.0")
 ]
 ```
 
@@ -81,16 +80,17 @@ SeamAccessView()
   .environment(\.seamTheme, customTheme)
 ```
 
-Learn more in the [Theming Guide](https://docs.seam.co/latest/ui-components/mobile/theming).
+Learn more in the [Theming Guide](https://docs.seam.co/latest/ui-components/seam-mobile-components/seam-mobile-components-for-ios/theming).
 
 ---
 
 ## Documentation
 
-- [Overview](https://docs.seam.co/latest/ui-components/mobile/overview)  
-- [Getting Started](https://docs.seam.co/latest/ui-components/mobile/getting-started)  
-- [Theming](https://docs.seam.co/latest/ui-components/mobile/theming)  
-- [Advanced Usage](https://docs.seam.co/latest/ui-components/mobile/advanced)  
+- [Seam Components](https://docs.seam.co/latest/ui-components/seam-mobile-components)
+- [Overview](https://seamapi.github.io/iOS/documentation/seamcomponents/)
+- [Getting Started](https://seamapi.github.io/iOS/documentation/seamcomponents/gettingstarted)  
+- [Theming](https://seamapi.github.io/iOS/documentation/seamcomponents/customizingappearance)
+- [Advanced Usage](https://seamapi.github.io/iOS/documentation/seamcomponents/customintegration)  
 
 ---
 
