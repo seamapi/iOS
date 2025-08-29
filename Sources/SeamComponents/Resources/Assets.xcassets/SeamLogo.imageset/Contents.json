@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "SeamIcon-iOS-ClearLight-60x60@3x.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

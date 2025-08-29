@@ -1,0 +1,144 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Allow Bluetooth Access" : {
+
+    },
+    "An error occured with this key, please contact support." : {
+
+    },
+    "An internet connection is needed. Please connect to Wi‑Fi or mobile data." : {
+
+    },
+    "App Restart Required" : {
+
+    },
+    "Authorize" : {
+
+    },
+    "Bluetooth is off. Please enable Bluetooth and/or tap \"Allow New Connections\" in Control Center or the Settings app." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "CHECK OUT" : {
+
+    },
+    "Connect to Internet" : {
+
+    },
+    "Contact Support" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Enable Bluetooth" : {
+
+    },
+    "Enable Internet Access" : {
+
+    },
+    "Enter Verification Code" : {
+
+    },
+    "Expired" : {
+
+    },
+    "Expires %@" : {
+
+    },
+    "Fetching your mobile keys…" : {
+
+    },
+    "Finish Authorization" : {
+
+    },
+    "Grant Bluetooth Permission" : {
+
+    },
+    "Hold phone to lock" : {
+
+    },
+    "Hold the back of your phone against the lock" : {
+
+    },
+    "Loading" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Please allow Bluetooth access for this app in the Settings app." : {
+
+    },
+    "Please complete authorization by tapping the link that was sent to your email." : {
+
+    },
+    "Please reach out to your property contact to make sure your mobile keys have been issued properly." : {
+
+    },
+    "Please restart the app to resolve this issue." : {
+
+    },
+    "Preparing Your Key" : {
+
+    },
+    "Preview View!" : {
+
+    },
+    "Processing" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Refreshing…" : {
+
+    },
+    "Restart App Now" : {
+
+    },
+    "ROOM" : {
+
+    },
+    "Something Went Wrong" : {
+
+    },
+    "Sorry, something went wrong. Please try again." : {
+
+    },
+    "Tap button" : {
+
+    },
+    "This device is not supported for this key. Please use a different device." : {
+
+    },
+    "Turn On Bluetooth" : {
+
+    },
+    "Unknown Issue" : {
+
+    },
+    "Unsupported Device" : {
+
+    },
+    "Wait & open door" : {
+
+    },
+    "You have no mobile keys" : {
+
+    },
+    "Your digital key access has expired and can no longer be used." : {
+
+    },
+    "Your digital key is being prepared. Please wait a moment." : {
+
+    },
+    "Your Key Has Expired" : {
+
+    }
+  },
+  "version" : "1.0"
+}

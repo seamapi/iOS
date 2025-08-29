@@ -1,0 +1,557 @@
+# llms.txt — SeamComponents
+_Last updated: 2025-08-19 · Owners: @sdk-ios, @docs · Audience: LLMs & codegen tools_
+
+> **Purpose:** This is a single, machine‑oriented reference that tells an LLM how to build great iOS apps with **SeamComponents** on top of the **Seam SDK V3**. It is authoritative, current, and scoped to Swift/SwiftUI.
+
+---
+
+## Scope
+This file covers Swift/SwiftUI UI components, theming, and the service protocol used by SeamComponents. It assumes the Seam SDK V3 is available in the app. Android/Kotlin and non‑UI guides are out of scope.
+
+## Quickstart (TL;DR)
+1) **Initialize & Activate** the Seam SDK after sign‑in.
+2) **Show** a ready‑made access UI (`SeamAccessView`).
+3) **Customize** with theming or build your own flow using the service.
+
+```swift
+import SwiftUI
+import Combine
+import SeamSDK           // Seam SDK V3
+import SeamComponents    // UI components
+
+struct ContentView: View {
+    var body: some View {
+        SeamAccessView() // turn‑key list + unlock flow
+    }
+}
+
+// App/bootstrap (e.g., after user signs in)
+func startSeamSession(clientSessionToken: String) {
+    do {
+        try Seam.initialize(clientSessionToken: clientSessionToken)
+        Task { try await Seam.shared.activate() }
+    } catch {
+        // Present error (see SeamError below)
+    }
+}
+```
+
+> The single-file demo app in **Reference Implementation** below is a complete version of this Quickstart. Copy it to verify your setup.
+
+---
+
+## Prerequisites
+- iOS 15+ (Swift 5.5+)
+- **Info.plist:** `NSBluetoothAlwaysUsageDescription`
+- **Optional** (nice to have): request `com.apple.developer.passkit.pass-presentation-suppression` entitlement to prevent Apple Wallet from appearing during BLE/NFC scans.
+
+## Installation
+- Add the Seam SDK and SeamComponents packages provided by Seam. Include the specific lock‑provider modules you need (e.g., Latch/Salto).
+- Ensure **Git LFS** is installed so large XCFrameworks download correctly (`brew install git-lfs && git lfs install`).
+
+---
+
+## Architecture at a Glance
+- **Seam SDK (V3)**: state & operations (`Seam.initialize`, `activate`, `refresh`, `unlock`, `deactivate`).
+- **SeamServiceProtocol**: a main‑actor facade used by UI to expose published state and commands.
+- **SeamComponents**: SwiftUI views (key lists/cards, unlock UI), theming (`SeamTheme`), and error presentation helpers.
+
+### SeamServiceProtocol (UI service)
+Conforming types adapt `Seam.shared` to UI‑friendly models and publishers.
+
+```swift
+import Combine
+
+@MainActor
+public protocol SeamServiceProtocol: AnyObject, ObservableObject {
+    // Published state
+    var credentials: [SeamAccessCredential] { get }
+    var isActive: Bool { get }
+
+    // Publishers for fine‑grained updates
+    var isActivePublisher: AnyPublisher<Bool, Never> { get }
+    var credentialsPublisher: AnyPublisher<[SeamAccessCredential], Never> { get }
+
+    // Commands (all main‑actor)
+    func initialize(clientSessionToken: String) throws
+    func activate() async throws
+    @discardableResult func refresh() async throws -> [SeamAccessCredential] // Optional helper
+    func unlock(using credentialId: String, timeout: TimeInterval) throws -> AnyPublisher<SeamAccessUnlockEvent, Never>
+    func deactivate(deintegrate: Bool) async
+}
+```
+
+> **Notes**
+> - `initialize(clientSessionToken:)` expects a non‑empty token; throws if missing/invalid.
+> - `refresh()` is **optional** — `credentials` auto‑update; call it to drive pull‑to‑refresh UI.
+> - The unlock publisher **never fails**; all preconditions are enforced via `throws` when calling `unlock(using:)`.
+
+---
+
+## Data Models (UI Layer)
+
+### SeamAccessCredential
+A UI‑friendly credential snapshot for display & selection.
+
+```swift
+import Foundation
+
+public struct SeamAccessCredential: Identifiable, Equatable, Hashable {
+    public let id: String
+    public let isManaged: Bool      // true if created/managed by Seam; false if discovered via provider integration
+    public let name: String
+    public let location: String
+    public let expiry: Date?
+    public let cardNumber: String?
+    public let code: String?
+    public let errors: [SeamCredentialError] // ordered by priority
+}
+```
+
+### Unlock Events (UI)
+`SeamAccessUnlockEvent` values emitted by the unlock stream:
+- `launched` — scanning/probing started
+- `grantedAccess` — success
+- `timedOut` — attempt timed out
+- `connectionFailed(debugDescription:)` — connection/protocol failure (string is diagnostic, not for end‑users)
+
+---
+
+## Errors
+
+### SeamError (SDK‑level)
+Thrown by SDK/service methods when preconditions are not met.
+
+| Case | Meaning |
+|---|---|
+| `.internetConnectionRequired` | Network required to perform operation |
+| `.initializationRequired` | Call `initialize(clientSessionToken:)` first |
+| `.invalidClientSessionToken` | Provided token is malformed/invalid |
+| `.deactivationInProgress` | A deactivation is already running; retry later |
+| `.alreadyInitialized` | SDK already initialized; call `deactivate(deintegrate:)` before reinit |
+| `.invalidCredentialId` | No credential matches the identifier |
+| `.integrationNotFound` | Provider module missing for the credential’s integration |
+| `.credentialErrors([SeamCredentialError])` | Credential has errors; resolve before unlock |
+
+### SeamCredentialError (per‑credential)
+
+| Case | Description |
+|---|---|
+| `.awaitingLocalCredential` | Waiting for a local credential to become available |
+| `.expired` | Credential expired; cannot be used |
+| `.userInteractionRequired(action)` | User must perform a specific action (see below) |
+| `.contactSeamSupport` | Configuration error requiring developer attention |
+| `.unsupportedDevice` | Current device is not supported |
+| `.unknown` | Unclassified/unexpected credential error |
+
+**`userInteractionRequired` actions**
+- `completeOtpAuthorization(otpUrl:)` → open URL to complete OTP
+- `enableInternet` → prompt to enable internet (open Settings)
+- `enableBluetooth` → prompt to turn on Bluetooth
+- `grantBluetoothPermission` → prompt to grant Bluetooth permission
+- `appRestartRequired` → ask the user to restart the app
+
+**Type:** `SeamCredentialError.RequiredUserInteraction`
+
+---
+
+## Building UIs
+
+### Turn‑key screen
+```swift
+import SeamComponents
+
+SeamAccessView() // ready‑made list + unlock UX with badges, messages, and actions
+```
+
+### Custom list + unlock (SwiftUI + Combine)
+```swift
+import SwiftUI
+import Combine
+
+final class KeysVM: ObservableObject {
+    @Published var rows: [SeamAccessCredential] = []
+    private var bag = Set<AnyCancellable>()
+    private let seam: any SeamServiceProtocol
+
+    init(seam: SeamServiceProtocol) {
+        self.seam = seam
+        seam.credentialsPublisher
+            .map { $0 }                 // functional operator
+            .receive(on: RunLoop.main)
+            .assign(to: &$rows)
+    }
+
+    func unlock(_ id: String) {
+        do {
+            try seam.unlock(using: id, timeout: 10)
+                .sink { event in
+                    switch event {
+                    case .launched: break
+                    case .grantedAccess: /* show success */ break
+                    case .timedOut: /* offer retry */ break
+                    case .connectionFailed(let debugDescription): /* log / show friendly message */ _ = debugDescription
+                    }
+                }
+                .store(in: &bag)
+        } catch {
+            // Handle SeamError preflight failures (see tables above)
+        }
+    }
+}
+```
+
+### Empty state (no credentials)
+Show a placeholder and offer a manual refresh. Credentials usually appear automatically after activation.
+
+```swift
+struct EmptyKeysView: View {
+    @Environment(\.seamService) private var seam
+    @State private var isRefreshing = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("No keys yet")
+                .font(.headline)
+            Button("Refresh") {
+                Task {
+                    isRefreshing = true
+                    _ = try? await seam.refresh()
+                    isRefreshing = false
+                }
+            }
+        }
+        .padding()
+    }
+}
+```
+
+### Handling credential errors in UI
+Use `SeamAccessCredentialErrorStyle` to map errors to badges/messages/actions consistently.
+
+```swift
+let style = SeamAccessCredentialErrorStyle.default
+let theme = SeamTheme.default
+
+if let error = credential.errors.first {
+    Image(systemName: style.systemIcon(error, theme: theme))
+    Text(style.message(error))
+    if let title = style.primaryActionTitle(error) {
+        Button(title) { style.primaryAction(error)() }
+    }
+}
+```
+
+#### `SeamAccessCredentialErrorStyle` (API surface)
+| Member | Purpose |
+|---|---|
+| `systemIcon(_:, theme:) -> String` | Symbol name for the error |
+| `message(_:) -> String` | Localized message to display |
+| `primaryActionTitle(_:) -> String?` | Optional call‑to‑action label |
+| `primaryAction(_:) -> () -> Void` | Action to invoke when tapped |
+
+### Preview & test mock (Xcode Previews)
+```swift
+import Combine
+
+@MainActor
+final class PreviewSeamService: SeamServiceProtocol {
+    @Published private(set) var credentials: [SeamAccessCredential] = []
+    @Published private(set) var isActive: Bool = true
+    var isActivePublisher: AnyPublisher<Bool, Never> { $isActive.eraseToAnyPublisher() }
+    var credentialsPublisher: AnyPublisher<[SeamAccessCredential], Never> { $credentials.eraseToAnyPublisher() }
+    func initialize(clientSessionToken: String) throws {}
+    func activate() async throws {}
+    @discardableResult func refresh() async throws -> [SeamAccessCredential] { credentials }
+    func unlock(using credentialId: String, timeout: TimeInterval) throws -> AnyPublisher<SeamAccessUnlockEvent, Never> {
+        Just(.grantedAccess).eraseToAnyPublisher()
+    }
+    func deactivate(deintegrate: Bool) async {}
+}
+```
+
+### Unlock UX patterns (retry & timeout)
+```swift
+func handleUnlockEvents(_ publisher: AnyPublisher<SeamAccessUnlockEvent, Never>) -> AnyCancellable {
+    publisher
+        .sink { event in
+            switch event {
+            case .launched:
+                // show spinner/progress UI
+                break
+            case .grantedAccess:
+                // show success banner, dismiss spinner
+                break
+            case .timedOut:
+                // present a retry button/modal
+                break
+            case .connectionFailed:
+                // show a friendly failure message and offer retry
+                break
+            }
+        }
+}
+```
+
+---
+
+## Theming
+
+- Apply a theme to any subtree:
+```swift
+SeamAccessView()
+    .environment(\.seamTheme, SeamTheme.default)
+```
+**Override example**
+```swift
+let theme = SeamTheme.default
+    .with(colors: .default.with(accent: .orange))
+    .with(fonts: .default.with(title: .system(size: 28, weight: .semibold)))
+SeamAccessView().environment(\.seamTheme, theme)
+```
+- Start from `.default` and override roles using `.with(...)` helpers (colors, fonts, key‑card style).
+- **Default behavior:** if you don’t inject a theme, components use `SeamTheme.default`.
+
+---
+
+## Lifecycle & State
+
+1) `Seam.initialize(clientSessionToken:)` → 2) `await Seam.shared.activate()` → 3) display credentials/unlock → 4) `await Seam.shared.deactivate(deintegrate:)` when signing out.
+
+- `credentials` updates automatically; use `refresh()` only to drive explicit pull‑to‑refresh.
+- Keep strong references to `AnyCancellable`s; dropping them cancels unlock streams.
+- UI updates must occur on the main thread; examples use `.receive(on: RunLoop.main)` or main-actor methods.
+
+## Preconditions & Invariants
+- The unlock publisher **never fails**; all preconditions are enforced via `throws` when calling `unlock(using:)`.
+- Only call `unlock(using:)` when `credential.errors.isEmpty`.
+- `refresh()` is **optional** and typically used to drive pull‑to‑refresh UI; background sync keeps `credentials` current.
+
+---
+
+## Cancellation Patterns
+- **Async/Await**: keep a `Task` and cancel on view disappear.
+- **Combine**: keep `AnyCancellable` and call `cancel()` or let it deinit.
+
+---
+
+## Offline Support
+Seam SDK supports offline access for cached credentials and recent unlocks. Ensure you activated at least once online to hydrate caches.
+
+---
+
+## Do / Don’t (LLM guardrails)
+**Do**
+- Use `map`, `sink`, and `.receive(on: RunLoop.main)` in examples.
+- Preflight unlock with `throws`; only start if `credential.errors.isEmpty`.
+- Present top‑priority credential error first.
+
+**Don’t**
+- Don’t reference deprecated or V1 APIs.
+- Don’t add a `.deniedAccess` event (not part of the current model).
+- Don’t guess provider modules—surface `.integrationNotFound` remediation instead.
+
+---
+
+## See also
+- Error Handling Guide (Articles/ErrorHandling.md)
+- Architecture Overview (Articles/Architecture.md)
+- Quick Start (Articles/QuickStart.md)
+
+---
+
+## Troubleshooting & FAQ
+- **`.integrationNotFound`** → Add the provider module for the credential’s integration to your Podfile/SPM dependencies.
+- **Unlock timeouts** → Check BLE on, lock in range, credential not expired; surface retry on `.timedOut`.
+- **Bluetooth permission** → Look for `.userInteractionRequired(.grantBluetoothPermission)` and offer Settings action.
+
+---
+
+## Changelog (excerpt)
+- **V3**: Unified service protocol; unlock events stream that never fails; richer credential error taxonomy; SwiftUI theming; optional `refresh()`.
+
+---
+
+## Reference Implementation (Single-File Demo App)
+
+```swift
+import SwiftUI
+import Combine
+import SeamSDK
+import SeamComponents
+
+@main
+struct DemoApp: App {
+    @State private var token: String? = "YOUR_CLIENT_SESSION_TOKEN"
+
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .task {
+                    guard let token else { return }
+                    do {
+                        try Seam.initialize(clientSessionToken: token)
+                        try await Seam.shared.activate()
+                    } catch {
+                        // In a real app, present a user-friendly alert
+                        print("Seam bootstrap failed:", error)
+                    }
+                }
+        }
+    }
+}
+
+struct RootView: View {
+    var body: some View {
+        NavigationView {
+            SeamAccessView()
+                .navigationTitle("Keys")
+        }
+    }
+}
+```
+
+---
+
+## Providing a Service Instance to Components
+
+`SeamAccessView` uses a default service backed by the Seam SDK. To override (e.g., for previews/tests), inject a custom service via environment:
+
+```swift
+let previewService: any SeamServiceProtocol = PreviewSeamService()
+SeamAccessView()
+    .environment(\.seamService, previewService) // environment key for the UI service
+```
+
+> If no service is injected, components use the default Seam-backed service.
+
+### Environment key (only if your app defines a custom service key)
+If SeamComponents provides `\.seamService` in your build, you don’t need this. For apps wiring a custom service:
+
+```swift
+private struct SeamServiceKey: EnvironmentKey {
+    static let defaultValue: any SeamServiceProtocol = /* your default service instance */
+}
+extension EnvironmentValues {
+    var seamService: any SeamServiceProtocol {
+        get { self[SeamServiceKey.self] }
+        set { self[SeamServiceKey.self] = newValue }
+    }
+}
+```
+
+---
+
+## Public Enum Shapes (for Codegen)
+
+```swift
+public enum SeamAccessUnlockEvent: Equatable {
+    case launched
+    case grantedAccess
+    case timedOut
+    case connectionFailed(debugDescription: String)
+}
+```
+
+---
+
+## Default Handlers for `RequiredUserInteraction`
+
+```swift
+import UIKit
+import CoreBluetooth
+
+func perform(_ action: SeamCredentialError.RequiredUserInteraction) {
+    switch action {
+    case .completeOtpAuthorization(let otpUrl):
+        UIApplication.shared.open(otpUrl)
+
+    case .enableInternet, .grantBluetoothPermission:
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+
+    case .enableBluetooth:
+        _ = CBCentralManager() // triggers Bluetooth prompt if needed
+
+    case .appRestartRequired:
+        // Show an alert asking user to quit and relaunch
+        print("Please restart the app.")
+    }
+}
+```
+
+---
+
+## Provider Integration Mapping (Installation Knobs)
+
+| Provider          | CocoaPods Subspec                  | SPM Target / Product       |
+|-------------------|-------------------------------------|----------------------------|
+| Latch (example)   | `SeamSDK/SeamLatchIntegration`     | `SeamLatchIntegration`     |
+| Dormakaba (ex.)   | `SeamSDK/SeamDormakabaIntegration` | `SeamDormakabaIntegration` |
+| Salto (ex.)       | `SeamSDK/SeamSaltoIntegration`     | `SeamSaltoIntegration`     |
+
+> Install **only** the modules you need; missing the correct one causes `.integrationNotFound`.
+
+---
+
+## Theming Role Reference (Shapes)
+
+```swift
+public struct SeamTheme {
+    public struct Colors {
+        public var accent: Color
+        public var primaryText: Color
+        public var secondaryText: Color
+        public var primaryTextLight: Color
+        public var primaryTextDark: Color
+        public var danger: Color
+        public var error: Color
+        public var warning: Color
+        public var info: Color
+        public var success: Color
+        public var grayFill: Color
+        public var lightFill: Color
+        public var darkFill: Color
+        public var secondaryFill: Color
+        public var progress: Color
+        public var secondaryBackground: Color
+        // init & `.default.with(...)`
+    }
+    public struct Fonts {
+        public var largeTitle, title, title2, title3: Font
+        public var headline, subheadline, body, callout: Font
+        public var footnote, caption, caption2: Font
+        public var actionTitle, sectionHeader: Font
+        // init & `.default.with(...)`
+    }
+    public struct KeyCardStyle {
+        public var backgroundGradient: [Color]
+        public var accentColor: Color
+        public var logoAssetName: String?
+        public var cornerRadius: CGFloat
+        public var shadowColor: Color
+        public var shadowRadius: CGFloat
+        public var shadowYOffset: CGFloat
+        // init & `.default.with(...)`
+    }
+}
+```
+
+---
+
+## Defaults & Idempotency
+
+- `unlock(using:timeout:)` default `timeout = 10` seconds.
+- `deactivate(deintegrate:)` is idempotent; calling while inactive is a no-op.
+- `activate()` requires prior `initialize(...)`; repeated calls while active are no-ops.
+- `credentials` auto-refresh in background; `refresh()` is **optional** (UI-driven).
+
+---
+
+## Accessibility & Localization
+- Components respect Dynamic Type; avoid fixed frame heights for key rows/cards.
+- Use `style.message(_:)` for localizable strings; prefer SF Symbols via `style.systemIcon`.
+- Ensure contrast ≥ AA for custom themes (primaryText vs. fills/backgrounds).
+
+---
