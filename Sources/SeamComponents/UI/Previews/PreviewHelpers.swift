@@ -1,6 +1,6 @@
 /**
  Preview-only helpers and mock services for Xcode Previews & demo builds.
- 
+
  - Important: This file is compiled only in DEBUG/Preview configurations (`#if DEBUG`).
  - SeeAlso: `SeamServiceProtocol`, `SeamService`
  */
@@ -8,32 +8,6 @@
 
 import SwiftUI
 import Combine
-
-// MARK: - Debug-only mocks & sample data
-#if DEBUG
-
-/// Preview convenience to bypass localization linting/tests.
-/// Returns the same string without looking up a localized value.
-extension String {
-    /// Returns `self` as-is, useful for preview/dummy strings.
-    var excludeLocalization: String { String(self) }
-}
-
-/// Preview theming convenience.
-extension SeamTheme {
-    /// A simple theme used in previews. Override to demonstrate custom branding.
-    public static var previewTheme: SeamTheme {
-//        .init()
-        DemoSeamTheme.theme
-    }
-}
-
-/// Minimal placeholder view used in previews.
-struct SeamUnlockMockView: View {
-    var body: some View {
-        Text("Preview View!")
-    }
-}
 
 /// A main‑actor mock service for previews/tests that conforms to ``SeamServiceProtocol``.
 ///
@@ -80,7 +54,37 @@ final class PreviewSeamService: SeamServiceProtocol {
 extension PreviewSeamService {
     /// Shared preview instance seeded with sample credentials.
     static var shared: PreviewSeamService {
+#if DEBUG
         .init(credentials: SeamAccessCredential.credentials)
+#else
+        .init(credentials: [])
+#endif
+    }
+}
+
+// MARK: - Debug-only mocks & sample data
+#if DEBUG
+
+/// Preview convenience to bypass localization linting/tests.
+/// Returns the same string without looking up a localized value.
+extension String {
+    /// Returns `self` as-is, useful for preview/dummy strings.
+    var excludeLocalization: String { String(self) }
+}
+
+/// Preview theming convenience.
+extension SeamTheme {
+    /// A simple theme used in previews. Override to demonstrate custom branding.
+    public static var previewTheme: SeamTheme {
+//                .init()
+        DemoSeamTheme.theme
+    }
+}
+
+/// Minimal placeholder view used in previews.
+struct SeamUnlockMockView: View {
+    var body: some View {
+        Text("Preview View!")
     }
 }
 

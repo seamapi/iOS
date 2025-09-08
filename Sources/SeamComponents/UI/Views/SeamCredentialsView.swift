@@ -93,7 +93,7 @@ public final class SeamCredentialsViewModel: ObservableObject {
     ///
     /// - Parameter service: A service conforming to ``SeamServiceProtocol`` used to
     ///   observe credentials, activation state, and perform manual refresh.
-    public init(seam service: any SeamServiceProtocol) {
+    public init(seam service: any SeamServiceProtocol = SeamServiceRegistry.auto) {
         self.service = service
         self.credentials = service.credentials
         self.isActivated = service.isActive

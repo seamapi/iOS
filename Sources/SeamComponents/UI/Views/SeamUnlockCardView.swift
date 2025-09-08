@@ -86,7 +86,7 @@ public final class SeamUnlockCardViewModel: ObservableObject {
     /// - Parameters:
     ///   - credentialId: The identifier of the credential to unlock.
     ///   - service: A service wrapper that provides state and unlock commands.
-    public init(credentialId: SeamAccessCredentialId, service: any SeamServiceProtocol) {
+    public init(credentialId: SeamAccessCredentialId, service: any SeamServiceProtocol = SeamServiceRegistry.auto) {
         self.credentialId = credentialId
         self.service = service
 

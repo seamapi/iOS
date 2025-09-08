@@ -43,24 +43,12 @@ public final class SeamAccessViewModel: ObservableObject {
     /// - Parameter service: A service that implements ``SeamServiceProtocol``.
     ///   Defaults to a live ``SeamService`` instance when the Seam SDK is present.
     ///   Otherwise a ``PreviewSeamService`` is used.
-    public init(service: (any SeamServiceProtocol)? = nil) {
-        let resolvedService = if let service {
-            service
-        } else if let service = SeamServiceRegistry.findLiveService() {
-            service
-        } else {
-            PreviewSeamService.shared
-        }
-
-        if SeamServiceRegistry.live == nil {
-            print("SeamComponents - WARNING: PreviewSeamService used as fallback for non-SeamSDK environment, only mock data will be returned. Please ensure proper integration for production use.")
-        }
-
-        self.service = resolvedService
-        self.isActive = resolvedService.isActive
+    public init(service: any SeamServiceProtocol = SeamServiceRegistry.auto) {
+        self.service = service
+        self.isActive = service.isActive
 
         // Observe explicit isActive changes from the service (protocol-friendly for iOS 16)
-        resolvedService.isActivePublisher
+        service.isActivePublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \SeamAccessViewModel.isActive, on: self)
             .store(in: &cancellables)

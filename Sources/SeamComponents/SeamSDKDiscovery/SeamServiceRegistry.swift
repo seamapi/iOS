@@ -1,70 +1,39 @@
 import Foundation
-import ObjectiveC.runtime
 
+/**
+ Central registry for Seam service implementations.
 
+ Use this to inject a real ("live") implementation at runtime while keeping a
+ compile‑time‑safe fallback to a preview/mock service for development, tests,
+ and Xcode Previews. The ``AutoSeamService`` proxy exposes a single, stable
+ handle you can pass through your UI; it automatically mirrors whichever
+ service is currently registered.
+
+ Changing ``live`` or ``mock`` automatically re‑attaches
+ ``AutoSeamService`` so your UI observes the new source of truth.
+
+ - Important: **Automatic registration:** When you link ``SeamMobileKit``, the **SeamSDK** is automatically registered as the ``live`` service during SDK initialization. Most apps do not need to set ``live`` manually; you can override it for testing or with a custom implementation.
+
+ - Note: All APIs in this file are `@MainActor`. Interact with them on the
+ main thread, as they drive UI state and SwiftUI publishers.
+ - SeeAlso: ``SeamServiceProtocol``, ``AutoSeamService``
+ */
 @MainActor
 public enum SeamServiceRegistry {
-    public private(set) static var live: (any SeamServiceProtocol)? = nil
+    /// Semantic version of the registry contract. Bump when registry semantics change.
+    public static var version = "1.0.0"
 
-    #if DEBUG
-    public private(set) static var mock: (any SeamServiceProtocol)? = PreviewSeamService.shared
-    #endif
-
-    public static func findLiveService() -> (any SeamServiceProtocol)? {
-        if live != nil { return live }
-        // Discover any SeamServiceRegistration subclasses that the SDK (or other providers) shipped.
-        let types = registeredServices()
-        // Determine a Components version string to pass along (best-effort).
-        let componentsVersion = "0.0.0"
-
-        // Instantiate the first available registration and create the live service.
-        let registration = types.first?.init()
-        let service = registration?.createService(componentsVersion: componentsVersion)
-        live = service
-        return live
+    /// Production service instance used by the app.
+    /// Automatically set by ``SeamMobileKit`` when SeamSDK is present; override after authentication if needed.
+    public static var live: (any SeamServiceProtocol)? = nil {
+        didSet { AutoSeamService.shared.refreshRegistry() }
     }
 
-    private static func registeredServices() -> [SeamServiceRegistration.Type] {
-        var result: [SeamServiceRegistration.Type] = []
-
-        var count: UInt32 = 0
-        let classList = objc_copyClassList(&count)!
-        defer { free(UnsafeMutableRawPointer(classList)) }
-        let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        for cls in classes {
-            // Walk superclass chain to see if `cls` inherits from `SeamServiceRegistration`
-            var s: AnyClass? = cls
-            var isSubclass = false
-            while let current = s {
-                if current == SeamServiceRegistration.self {
-                    isSubclass = true
-                    break
-                }
-                s = class_getSuperclass(current)
-            }
-
-            if isSubclass,
-               cls != SeamServiceRegistration.self,  // exclude the base class itself
-               let typed = cls as? SeamServiceRegistration.Type {
-                result.append(typed)
-                break
-            }
-        }
-        return result
-    }
-}
-
-
-@_spi(Internal)
-@objc open class SeamServiceRegistration: NSObject {
-    open var sdkVersion: String {
-        fatalError("Must override version in SeamSDK.")
+    /// Default fallback used when ``live`` is `nil`. Suitable for previews/tests.
+    public private(set) static var mock: any SeamServiceProtocol = PreviewSeamService.shared {
+        didSet { AutoSeamService.shared.refreshRegistry() }
     }
 
-    @MainActor
-    open func createService(componentsVersion: String) -> any SeamServiceProtocol {
-        fatalError("Must override createSeamService(componentsVersion:).")
-    }
-
-    public override required init() { }
+    /// Stable proxy that targets ``live`` when set, otherwise ``mock``.
+    public static let auto: any SeamServiceProtocol = AutoSeamService.shared
 }
