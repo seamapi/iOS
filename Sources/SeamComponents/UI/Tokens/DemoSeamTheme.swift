@@ -100,10 +100,10 @@ enum DemoSeamTheme {
         keyCard: .default.with(
             backgroundGradient: [
                 .teWhite,
-                .teGrey100
+                .teGrey200
             ],
             accentColor: .teOrange,
-            logoAssetName: "DemoLogo",
+            logoAssetName: "SeamLogo",
             cornerRadius: 12,
             shadowColor: .teBlack.opacity(0.25),
             shadowRadius: 8,

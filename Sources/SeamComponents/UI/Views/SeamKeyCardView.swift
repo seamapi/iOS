@@ -134,7 +134,7 @@ public extension SeamKeyCardStyle {
             Color.gray.opacity(0.25)
         ] },
         accentColor: { _ in Color.orange },
-        logoAssetName: { _ in "Icon" }
+        logoAssetName: { _ in "SeamLogo" }
     )
 
     /// A modern style with a purple gradient and blue accent, suitable for branded experiences.
@@ -144,7 +144,7 @@ public extension SeamKeyCardStyle {
             Color.purple.opacity(0.65)
         ] },
         accentColor: { _ in Color.blue },
-        logoAssetName: { _ in "Icon"}
+        logoAssetName: { _ in "SeamLogo"}
     )
 
     /// A bright, energetic yellow style for cheerful, attention‑grabbing cards.
@@ -154,7 +154,7 @@ public extension SeamKeyCardStyle {
             Color.yellow.opacity(0.65)
         ] },
         accentColor: { _ in Color.yellow },
-        logoAssetName: { _ in "Icon" }
+        logoAssetName: { _ in "SeamLogo" }
     )
 }
 
@@ -462,7 +462,7 @@ struct SeamKeyCardTextBlock: View {
                     hotelName: "San Diego Grey Del Mar",
                     roomLabel: "Room 1048",
                     checkoutText: "Fri, Jun 21 at 4:00 PM",
-                    style: .grey,
+                    style: .default(theme: SeamTheme.default),
                     errors: []
                 ),
                 errorStyle: .default
