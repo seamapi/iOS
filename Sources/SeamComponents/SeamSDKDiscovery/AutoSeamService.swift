@@ -100,7 +100,7 @@ public final class AutoSeamService: SeamServiceProtocol {
      */
     @discardableResult
     public func refresh() async throws -> [SeamAccessCredential] {
-        try await currentService.refresh() ?? []
+        try await currentService.refresh()
     }
 
     /**
@@ -109,7 +109,7 @@ public final class AutoSeamService: SeamServiceProtocol {
      - SeeAlso: SeamServiceProtocol ``SeamServiceProtocol/unlock(using:timeout:)``
      */
     public func unlock(using credentialId: String, timeout: TimeInterval) throws -> AnyPublisher<SeamAccessUnlockEvent, Never> {
-        try currentService.unlock(using: credentialId, timeout: timeout) ?? Empty().eraseToAnyPublisher()
+        try currentService.unlock(using: credentialId, timeout: timeout)
     }
 
     /**
