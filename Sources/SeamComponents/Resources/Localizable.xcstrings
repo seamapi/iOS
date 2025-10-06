@@ -22,9 +22,6 @@
     "Cancel" : {
 
     },
-    "CHECK OUT" : {
-
-    },
     "Connect to Internet" : {
 
     },
@@ -47,6 +44,9 @@
 
     },
     "Expires %@" : {
+
+    },
+    "EXPIRES AT" : {
 
     },
     "Fetching your mobile keys…" : {

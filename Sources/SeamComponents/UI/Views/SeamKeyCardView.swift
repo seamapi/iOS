@@ -435,7 +435,7 @@ struct SeamKeyCardTextBlock: View {
             }
 
             HStack {
-                Text("CHECK OUT")
+                Text("EXPIRES AT")
                     .font(theme.fonts.footnote)
                     .foregroundColor(theme.colors.secondaryText)
                 Text(checkoutText)
