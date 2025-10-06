@@ -95,7 +95,7 @@ public extension SeamAccessCredentialError {
     func iconColor(theme: SeamTheme) -> Color {
         switch self {
         case .awaitingLocalCredential:
-            theme.colors.warning
+            theme.colors.info
         case .contactSeamSupport:
             theme.colors.error
         case .unsupportedDevice:

@@ -299,8 +299,23 @@ public struct SeamKeyCardView: View {
             // brand logo
             SeamKeyCardLogo(imageName: viewModel.style.logoAssetName(theme))
 
-
             // text content
+            VStack {
+                Spacer()
+                SeamKeyCardTextBlock(
+                    hotelName: viewModel.hotelName,
+                    roomLabel: viewModel.roomLabel,
+                    checkoutText: viewModel.checkoutText
+                )
+            }
+
+            /// When errors are present, apply a material overlay to de‑emphasize card content behind the badge.
+            if viewModel.errors.contains(.expired)
+                || viewModel.errors.contains(.unknown) {
+                Rectangle()
+                    .fill(.ultraThinMaterial.opacity(0.7))
+            }
+
             VStack {
                 if let error = viewModel.errors.first {
                     HStack {
@@ -313,19 +328,7 @@ public struct SeamKeyCardView: View {
                     }
                     .padding()
                 }
-                Spacer()
-                SeamKeyCardTextBlock(
-                    hotelName: viewModel.hotelName,
-                    roomLabel: viewModel.roomLabel,
-                    checkoutText: viewModel.checkoutText
-                )
-            }
-
-            /// When errors are present, apply a material overlay to de‑emphasize card content behind the badge.
-            if !viewModel.errors.isEmpty {
-                Rectangle()
-                    .fill(.ultraThinMaterial.opacity(0.7))
-            }
+            }.frame(maxHeight: .infinity, alignment: .topLeading)
         }
         .cornerRadius(viewModel.style.cornerRadius(theme))
         .shadow(
@@ -334,8 +337,8 @@ public struct SeamKeyCardView: View {
             x: viewModel.style.shadow(theme).x,
             y: viewModel.style.shadow(theme).y
         )
-        /// Fixed height chosen to maintain a consistent card aspect in grids and lists.
-        .frame(height: 200)
+        // Standard credit card aspect ratio
+        .aspectRatio(1.586, contentMode: .fit)
     }
 }
 
@@ -345,21 +348,23 @@ public struct SeamKeyCardView: View {
 struct SeamKeyCardAccentBar: View {
     let color: Color
     let cornerRadius: CGFloat
+    let height: CGFloat
 
     /// Creates an accent bar.
     /// - Parameters:
     ///   - color: The bar color.
     ///   - cornerRadius: The card corner radius used to align the bar.
-    init(color: Color, cornerRadius: CGFloat) {
+    init(color: Color, cornerRadius: CGFloat, height: CGFloat = 8) {
         self.color = color
         self.cornerRadius = cornerRadius
+        self.height = height
     }
 
     var body: some View {
         VStack(alignment: .trailing) {
             Rectangle()
                 .fill(color)
-                .frame(width: 110, height: 8)
+                .frame(width: 149, height: height)
             Rectangle()
                 .fill(.clear)
                 .frame(maxHeight: .infinity)
@@ -369,30 +374,28 @@ struct SeamKeyCardAccentBar: View {
 
 /// Displays a resizable logo image in the top-trailing corner of the card.
 struct SeamKeyCardLogo: View {
+    @Environment(\.redactionReasons) var reasons
     let imageName: String
+    let verticalPadding: CGFloat
 
     /// Creates a logo view.
     /// - Parameter imageName: The asset name of the logo image.
-    init(imageName: String) {
+    /// - Parameter verticalPadding: Additional padding to account for the
+    /// ``SeamKeyCardAccentBar`` height.
+    init(imageName: String, verticalPadding: CGFloat = 8) {
         self.imageName = imageName
+        self.verticalPadding = verticalPadding
     }
 
     var body: some View {
-        // Attempt to load the asset from the module bundle first, then fall back to the main bundle.
-        ZStack {
-            Image(imageName, bundle: .module)
+        VStack {
+            SeamImage(imageName)
                 .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
+                .frame(maxWidth: 110, maxHeight: 60, alignment: .topTrailing)
                 .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            Image(imageName, bundle: .main)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.vertical, verticalPadding)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     }
 }
 

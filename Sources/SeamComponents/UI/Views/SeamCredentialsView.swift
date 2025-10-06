@@ -205,7 +205,7 @@ public struct SeamNoCredentialsView: View {
                         .foregroundStyle(theme.colors.secondaryFill)
                     Image(systemName: "line.diagonal")
                         .font(.system(size: 120).weight(.medium))
-                        .foregroundColor(Color(UIColor.systemBackground))
+                        .foregroundColor(theme.colors.primaryBackground)
                     Image(systemName: "line.diagonal")
                         .font(.system(size: 110))
                         .foregroundStyle(theme.colors.secondaryFill)
@@ -287,6 +287,7 @@ public struct SeamCredentialGrid: View {
                             onSelect?(credential)
                         }
                         .padding(.horizontal)
+                        .padding(.bottom)
                 }
             }
         }

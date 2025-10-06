@@ -31,6 +31,8 @@ public struct SeamDuneBackground: View {
     /// The corner radius applied to the rounded rectangle clip shape.
     public let cornerRadius: CGFloat
 
+    @Environment(\.seamTheme) private var theme
+
     /// Creates a dune background.
     ///
     /// - Parameters:
@@ -54,10 +56,10 @@ public struct SeamDuneBackground: View {
                 // Bottom leading light highlight blended with .screen for a soft glow.
                 RadialGradient(
                     gradient: Gradient(stops: [
-                        .init(color: Color.white.opacity(0.4), location: 0),
+                        .init(color: Color.primary.opacity(0.4), location: 0),
                         .init(color: Color.clear, location: 1)
                     ]),
-                    center: .bottomLeading,
+                    center: .topLeading,
                     startRadius: 0,
                     endRadius: max(geo.size.width, geo.size.height)
                 )
@@ -89,6 +91,7 @@ public struct SeamDuneBackground: View {
                     )
                 )
             }
+            .background(theme.colors.primaryBackground)
             // Clip the composition to a continuous rounded rectangle.
             .clipShape(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

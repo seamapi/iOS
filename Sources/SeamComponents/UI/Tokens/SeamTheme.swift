@@ -121,7 +121,7 @@ public struct SeamTheme: Sendable, Equatable {
             accentColor: .accentColor,
             logoAssetName: "SeamLogo",
             cornerRadius: 16,
-            shadowColor: .black.opacity(0.10),
+            shadowColor: .primary.opacity(0.25),
             shadowRadius: 10,
             shadowYOffset: 4
         )
@@ -231,7 +231,7 @@ public struct SeamTheme: Sendable, Equatable {
             accentColor: .accentColor,
             borderColor: Color(UIColor.separator),
             cornerRadius: 14,
-            shadowColor: .black.opacity(0.12),
+            shadowColor: .primary.opacity(0.15),
             shadowRadius: 10,
             shadowYOffset: 6,
             horizontalPadding: 14,

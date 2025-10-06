@@ -347,9 +347,9 @@ struct SeamKeyDetailsView: View {
                 }
             }
             Spacer()
-            Image(providerImageName, bundle: .module)
-                .renderingMode(.template)
+            SeamImage(providerImageName)
                 .resizable()
+                .renderingMode(.template)
                 .frame(width: 50, height: 50)
                 .foregroundStyle(theme.unlockCard.providerLogoTint)
         }
@@ -475,17 +475,17 @@ struct SeamUnlockCardInstructionList: View {
             VStack(alignment: .leading) {
                 HStack {
                     VStack(alignment: .leading) {
-                        HStack {
+                        HStack(alignment: .firstTextBaseline) {
                             bullet("1")
                             Text("Tap button")
                                 .font(theme.fonts.footnote)
                         }
-                        HStack {
+                        HStack(alignment: .firstTextBaseline) {
                             bullet("2")
                             Text("Hold phone to lock")
                                 .font(theme.fonts.footnote)
                         }
-                        HStack {
+                        HStack(alignment: .firstTextBaseline) {
                             bullet("3")
                             Text("Wait & open door")
                                 .font(theme.fonts.footnote)
@@ -496,7 +496,11 @@ struct SeamUnlockCardInstructionList: View {
 
                     Spacer()
 
-                    Image("UnlockPictogram", bundle: .module)
+                    SeamImage("UnlockPictogram")
+                        .resizable()
+                        .padding(.leading, 20)
+                        .padding(.top, 26)
+                        .frame(minWidth: 80, minHeight: 80)
                 }
             }
         }
@@ -576,23 +580,35 @@ struct SeamUnlockCardStatusView: View {
             switch status {
             case .success:
                 if #available(iOS 16.0, *) {
-                    Image(systemName: "checkmark.circle")
+                    Image(systemName: "checkmark.circle.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .fontWeight(.light)
-                        .foregroundColor(theme.unlockCard.successColor)
+                        .foregroundStyle(successStyle())
                 } else {
-                    Image(systemName: "checkmark.circle")
+                    Image(systemName: "checkmark.circle.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .foregroundColor(theme.unlockCard.successColor)                }
+                        .foregroundStyle(successStyle())
+                }
             case .error:
                 Image(systemName: "key.slash")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .foregroundColor(theme.unlockCard.errorColor)
+                    .foregroundStyle(theme.unlockCard.errorColor)
             }
         }
+    }
+
+    func successStyle() -> LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                theme.unlockCard.successColor.opacity(0.8),
+                theme.unlockCard.successColor
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }
 
